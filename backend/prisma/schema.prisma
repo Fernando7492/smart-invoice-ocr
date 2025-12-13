@@ -5,10 +5,18 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  fileName      String
+  filePath      String
+  extractedText String?  @db.Text
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
 }
