@@ -6,8 +6,13 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class InvoicesService {
   constructor(private prisma: PrismaService) {}
-  create(createInvoiceDto: CreateInvoiceDto) {
-    return 'This action adds a new invoice';
+  async create(createInvoiceDto: CreateInvoiceDto) {
+    return await this.prisma.invoice.create({
+      data: {
+        fileName: createInvoiceDto.fileName,
+        filePath: createInvoiceDto.filePath,
+      },
+    });
   }
 
   findAll() {
