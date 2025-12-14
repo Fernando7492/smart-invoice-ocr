@@ -18,6 +18,7 @@ services:
   backend:
     build: ./backend
     container_name: sio_backend
+    restart: on-failure
     ports:
       - "3000:3000"
     environment:
@@ -30,7 +31,20 @@ services:
     depends_on:
       - db
     command: >
-      sh -c "npx prisma migrate deploy && npm run start:dev"
+      sh -c "sleep 5 && npx prisma migrate deploy && npm run start:dev"
+  
+  frontend:
+      build: ./frontend
+      container_name: sio_frontend
+      ports:
+        - "3001:3000"
+      volumes:
+        - ./frontend:/app
+        - /app/node_modules
+      networks:
+        - sio-network
+      depends_on:
+        - backend
 
 volumes:
   pgdata:

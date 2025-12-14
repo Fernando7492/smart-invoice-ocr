@@ -1,0 +1,21 @@
+import axios from 'axios';
+import { Invoice } from '@/types';
+
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:3000',
+});
+
+export const uploadInvoice = async (file: File): Promise<Invoice> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const { data } = await api.post<Invoice>('/invoices', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  return data;
+};
+
+export default api;
