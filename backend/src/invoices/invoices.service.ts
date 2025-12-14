@@ -2,32 +2,44 @@ import { Injectable } from '@nestjs/common';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { OcrService } from './ocr.service';
 
 @Injectable()
 export class InvoicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ocrService: OcrService,
+  ) {}
+
   async create(createInvoiceDto: CreateInvoiceDto) {
-    return await this.prisma.invoice.create({
+    const text = await this.ocrService.extractText(createInvoiceDto.filePath);
+
+    return this.prisma.invoice.create({
       data: {
         fileName: createInvoiceDto.fileName,
         filePath: createInvoiceDto.filePath,
+        extractedText: text,
+        status: 'PROCESSED',
       },
     });
   }
 
   findAll() {
-    return `This action returns all invoices`;
+    return this.prisma.invoice.findMany();
   }
 
   findOne(id: string) {
-    return `This action returns a #${id} invoice`;
+    return this.prisma.invoice.findUnique({ where: { id } });
   }
 
   update(id: string, updateInvoiceDto: UpdateInvoiceDto) {
-    return `This action updates a #${id} invoice`;
+    return this.prisma.invoice.update({
+      where: { id },
+      data: updateInvoiceDto,
+    });
   }
 
   remove(id: string) {
-    return `This action removes a #${id} invoice`;
+    return this.prisma.invoice.delete({ where: { id } });
   }
 }

@@ -15,6 +15,23 @@ services:
     networks:
       - sio-network
 
+  backend:
+    build: ./backend
+    container_name: sio_backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/sio_db?schema=public"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - sio-network
+    depends_on:
+      - db
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:dev"
+
 volumes:
   pgdata:
 
