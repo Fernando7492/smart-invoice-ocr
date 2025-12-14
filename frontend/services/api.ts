@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Invoice } from '@/types';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:3000',
+  baseURL: 'http://localhost:3000',
 });
 
 export const uploadInvoice = async (file: File): Promise<Invoice> => {
@@ -16,6 +16,11 @@ export const uploadInvoice = async (file: File): Promise<Invoice> => {
   });
   
   return data;
+};
+
+export const askQuestion = async (id: string, question: string): Promise<string> => {
+  const { data } = await api.post<{ answer: string }>(`/invoices/${id}/chat`, { question });
+  return data.answer;
 };
 
 export default api;

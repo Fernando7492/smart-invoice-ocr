@@ -1,0 +1,106 @@
+'use client';
+
+import { useState, FormEvent } from 'react';
+import { Send, Bot, User } from 'lucide-react';
+import { askQuestion } from '@/services/api';
+
+interface ChatProps {
+  invoiceId: string;
+}
+
+interface Message {
+  role: 'user' | 'ai';
+  text: string;
+}
+
+export default function Chat({ invoiceId }: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setIsLoading(true);
+
+    try {
+      const answer = await askQuestion(invoiceId, userMessage);
+      setMessages(prev => [...prev, { role: 'ai', text: answer }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'ai', text: 'Erro ao conectar com a inteligência: ' + error }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full border-t border-gray-800 mt-4 pt-4">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 max-h-75">
+        {messages.length === 0 && (
+          <p className="text-gray-500 text-sm text-center mt-10">
+            Faça perguntas sobre o documento (ex: Qual o valor total? ou Qual o CNPJ?)
+          </p>
+        )}
+        
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {msg.role === 'ai' && (
+              <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center shrink-0">
+                <Bot className="w-4 h-4 text-blue-400" />
+              </div>
+            )}
+            
+            <div className={`p-3 rounded-lg text-sm max-w-[80%] ${
+              msg.role === 'user' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-800 text-gray-200'
+            }`}>
+              {msg.text}
+            </div>
+
+            {msg.role === 'user' && (
+              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-gray-300" />
+              </div>
+            )}
+          </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg flex items-center gap-1">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-75" />
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="relative">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Pergunte algo sobre a nota..."
+          disabled={isLoading}
+          className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+        />
+        <button 
+          type="submit" 
+          disabled={!input.trim() || isLoading}
+          className="absolute right-2 top-2 p-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-md transition-colors"
+        >
+          <Send className="w-4 h-4" />
+        </button>
+      </form>
+    </div>
+  );
+}

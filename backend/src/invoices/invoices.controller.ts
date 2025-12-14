@@ -5,15 +5,21 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Body,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InvoicesService } from './invoices.service';
+import { AiService } from '../ai.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @Controller('invoices')
 export class InvoicesController {
-  constructor(private readonly invoicesService: InvoicesService) {}
+  constructor(
+    private readonly invoicesService: InvoicesService,
+    private readonly aiService: AiService,
+  ) {}
 
   @Post()
   @UseInterceptors(
@@ -44,5 +50,21 @@ export class InvoicesController {
   @Get()
   findAll() {
     return this.invoicesService.findAll();
+  }
+
+  @Post(':id/chat')
+  async chat(@Param('id') id: string, @Body('question') question: string) {
+    const invoice = await this.invoicesService.findOne(id);
+
+    if (!invoice) {
+      throw new BadRequestException('Nota fiscal não encontrada');
+    }
+
+    const answer = await this.aiService.ask(
+      invoice.extractedText ?? '',
+      question,
+    );
+
+    return { answer };
   }
 }
