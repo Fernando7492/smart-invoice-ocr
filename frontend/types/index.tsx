@@ -3,6 +3,7 @@ export interface Message {
   role: 'user' | 'ai';
   text: string;
   createdAt: string;
+  invoiceId: string;
 }
 
 export interface Invoice {
@@ -12,5 +13,6 @@ export interface Invoice {
   extractedText: string | null;
   status: 'PENDING' | 'PROCESSED' | 'ERROR';
   createdAt: string;
+  userId: string;
   messages?: Message[];
 }
