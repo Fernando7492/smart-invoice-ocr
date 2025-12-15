@@ -16,7 +16,7 @@ import { InvoicesService } from './invoices.service';
 import { AiService } from '../ai.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { Message } from '@prisma/client';
+import { Message, Invoice } from '@prisma/client';
 import { Request } from 'express';
 
 interface RequestWithUser extends Request {
@@ -52,14 +52,14 @@ export class InvoicesController {
   create(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
-  ) {
+  ): Promise<Invoice> {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
     return this.invoicesService.create(
       {
-        fileName: file.filename,
+        fileName: file.originalname,
         filePath: file.path,
       },
       req.user.userId,
@@ -67,7 +67,7 @@ export class InvoicesController {
   }
 
   @Get()
-  findAll(@Req() req: RequestWithUser) {
+  findAll(@Req() req: RequestWithUser): Promise<Invoice[]> {
     return this.invoicesService.findAll(req.user.userId);
   }
 

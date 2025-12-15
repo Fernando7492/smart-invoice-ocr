@@ -107,7 +107,7 @@ export default function Chat({ invoiceId }: ChatProps) {
               </div>
             )}
             
-            <div className={`p-3 rounded-lg text-sm max-w-[85%] overflow-hidden prose prose-invert leading-relaxed break-words ${
+            <div className={`p-3 rounded-lg text-sm max-w-[85%] overflow-hidden prose prose-invert leading-relaxed wrap-break-words ${
               msg.role === 'user' 
                 ? 'bg-blue-600 text-white prose-p:text-white' 
                 : 'bg-gray-800 text-gray-200'
