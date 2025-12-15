@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Invoice } from '@/types';
+import { Invoice, Message } from '@/types';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000',
@@ -18,9 +18,19 @@ export const uploadInvoice = async (file: File): Promise<Invoice> => {
   return data;
 };
 
+export const getInvoices = async (): Promise<Invoice[]> => {
+  const { data } = await api.get<Invoice[]>('/invoices');
+  return data;
+};
+
 export const askQuestion = async (id: string, question: string): Promise<string> => {
   const { data } = await api.post<{ answer: string }>(`/invoices/${id}/chat`, { question });
   return data.answer;
+};
+
+export const getMessages = async (id: string): Promise<Message[]> => {
+  const { data } = await api.get<Message[]>(`/invoices/${id}/messages`);
+  return data;
 };
 
 export default api;

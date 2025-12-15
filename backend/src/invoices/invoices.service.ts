@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { Message } from '@prisma/client';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { OcrService } from './ocr.service';
@@ -41,5 +42,26 @@ export class InvoicesService {
 
   remove(id: string) {
     return this.prisma.invoice.delete({ where: { id } });
+  }
+
+  async saveMessage(
+    invoiceId: string,
+    text: string,
+    role: 'user' | 'ai',
+  ): Promise<Message> {
+    return await this.prisma.message.create({
+      data: {
+        invoiceId,
+        text,
+        role,
+      },
+    });
+  }
+
+  async findMessages(invoiceId: string): Promise<Message[]> {
+    return await this.prisma.message.findMany({
+      where: { invoiceId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 }

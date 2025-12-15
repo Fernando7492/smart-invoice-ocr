@@ -39,7 +39,7 @@ export default function DocumentPreview({ data }: DocumentPreviewProps) {
       
       <div className="flex-1 flex flex-col">
         <h3 className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Assistente IA</h3>
-        <Chat invoiceId={data.id} />
+        <Chat key={data.id} invoiceId={data.id} />
       </div>
     </div>
   );
