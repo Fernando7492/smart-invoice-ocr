@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Send, Bot, User } from 'lucide-react';
-import { askQuestion } from '@/services/api';
+import { askQuestion, getMessages } from '@/services/api';
+import { Message } from '@/types';
 
 interface ChatProps {
   invoiceId: string;
-}
-
-interface Message {
-  role: 'user' | 'ai';
-  text: string;
 }
 
 export default function Chat({ invoiceId }: ChatProps) {
@@ -18,20 +14,55 @@ export default function Chat({ invoiceId }: ChatProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
+  useEffect(() => {
+    const loadHistory = async (): Promise<void> => {
+      try {
+        const history = await getMessages(invoiceId);
+        setMessages(history);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    void loadHistory();
+  }, [invoiceId]);
+
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = input;
+    const userText = input;
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    
+    const tempUserMessage: Message = {
+      id: 'temp-id',
+      role: 'user',
+      text: userText,
+      createdAt: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, tempUserMessage]);
     setIsLoading(true);
 
     try {
-      const answer = await askQuestion(invoiceId, userMessage);
-      setMessages(prev => [...prev, { role: 'ai', text: answer }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', text: 'Erro ao conectar com a inteligência: ' + error }]);
+      const answer = await askQuestion(invoiceId, userText);
+      
+      const aiMessage: Message = {
+        id: 'ai-temp-id',
+        role: 'ai',
+        text: answer,
+        createdAt: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } catch {
+      const errorMessage: Message = {
+        id: 'error-id',
+        role: 'ai',
+        text: 'Erro ao conectar com a inteligência.',
+        createdAt: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -39,10 +70,10 @@ export default function Chat({ invoiceId }: ChatProps) {
 
   return (
     <div className="flex flex-col h-full border-t border-gray-800 mt-4 pt-4">
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 max-h-75">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 max-h-75 custom-scrollbar">
         {messages.length === 0 && (
           <p className="text-gray-500 text-sm text-center mt-10">
-            Faça perguntas sobre o documento (ex: Qual o valor total? ou Qual o CNPJ?)
+            Faça perguntas sobre o documento (ex: &quot;Qual o valor total?&quot;, &quot;Qual o CNPJ?&quot;)
           </p>
         )}
         
