@@ -5,6 +5,29 @@ const api = axios.create({
   baseURL: 'http://localhost:3000',
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const login = async (email: string, pass: string): Promise<string> => {
+  const { data } = await api.post<{ access_token: string }>('/auth/login', {
+    email,
+    password: pass,
+  });
+  return data.access_token;
+};
+
+export const register = async (email: string, pass: string): Promise<void> => {
+  await api.post('/auth/register', {
+    email,
+    pass,
+  });
+};
+
 export const uploadInvoice = async (file: File): Promise<Invoice> => {
   const formData = new FormData();
   formData.append('file', file);

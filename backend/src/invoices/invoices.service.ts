@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { Message } from '@prisma/client';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { OcrService } from './ocr.service';
+import { Invoice, Message } from '@prisma/client';
+
 
 @Injectable()
 export class InvoicesService {
@@ -12,36 +13,78 @@ export class InvoicesService {
     private readonly ocrService: OcrService,
   ) {}
 
-  async create(createInvoiceDto: CreateInvoiceDto) {
-    const text = await this.ocrService.extractText(createInvoiceDto.filePath);
-
-    return this.prisma.invoice.create({
+  async create(
+    createInvoiceDto: CreateInvoiceDto,
+    userId: string,
+  ): Promise<Invoice> {
+    const invoice = await this.prisma.invoice.create({
       data: {
-        fileName: createInvoiceDto.fileName,
-        filePath: createInvoiceDto.filePath,
-        extractedText: text,
-        status: 'PROCESSED',
+        ...createInvoiceDto,
+        userId,
       },
+    });
+
+    this.ocrService
+      .processInvoice(invoice.id, invoice.filePath)
+      .then((text) => {
+        return this.prisma.invoice.update({
+          where: { id: invoice.id },
+          data: {
+            extractedText: text,
+            status: 'PROCESSED',
+          },
+        });
+      })
+      .catch(() => {
+        return this.prisma.invoice.update({
+          where: { id: invoice.id },
+          data: { status: 'ERROR' },
+        });
+      });
+
+    return invoice;
+  }
+
+  async findAll(userId: string): Promise<Invoice[]> {
+    return await this.prisma.invoice.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  findAll() {
-    return this.prisma.invoice.findMany();
+  async findOne(id: string, userId: string): Promise<Invoice | null> {
+    return await this.prisma.invoice.findFirst({
+      where: { id, userId },
+    });
   }
 
-  findOne(id: string) {
-    return this.prisma.invoice.findUnique({ where: { id } });
-  }
+  async update(
+    id: string,
+    updateInvoiceDto: UpdateInvoiceDto,
+    userId: string,
+  ): Promise<Invoice> {
+    const invoice = await this.findOne(id, userId);
 
-  update(id: string, updateInvoiceDto: UpdateInvoiceDto) {
-    return this.prisma.invoice.update({
+    if (!invoice) {
+      throw new NotFoundException('Nota fiscal não encontrada');
+    }
+
+    return await this.prisma.invoice.update({
       where: { id },
       data: updateInvoiceDto,
     });
   }
 
-  remove(id: string) {
-    return this.prisma.invoice.delete({ where: { id } });
+  async remove(id: string, userId: string): Promise<Invoice> {
+    const invoice = await this.findOne(id, userId);
+
+    if (!invoice) {
+      throw new NotFoundException('Nota fiscal não encontrada');
+    }
+
+    return await this.prisma.invoice.delete({
+      where: { id },
+    });
   }
 
   async saveMessage(

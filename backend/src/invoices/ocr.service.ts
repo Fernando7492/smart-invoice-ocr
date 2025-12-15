@@ -10,7 +10,7 @@ const execAsync = promisify(exec);
 
 @Injectable()
 export class OcrService {
-  async extractText(filePath: string): Promise<string> {
+  async processInvoice(id: string, filePath: string): Promise<string> {
     const isPdf = filePath.toLowerCase().endsWith('.pdf');
 
     if (!isPdf) {

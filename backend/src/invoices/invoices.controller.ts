@@ -7,15 +7,27 @@ import {
   BadRequestException,
   Body,
   Param,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InvoicesService } from './invoices.service';
 import { AiService } from '../ai.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Message } from '@prisma/client';
+import { Request } from 'express';
+
+interface RequestWithUser extends Request {
+  user: {
+    userId: string;
+    email: string;
+  };
+}
 
 @Controller('invoices')
+@UseGuards(AuthGuard('jwt'))
 export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
@@ -37,28 +49,35 @@ export class InvoicesController {
       }),
     }),
   )
-  create(@UploadedFile() file: Express.Multer.File) {
+  create(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: RequestWithUser,
+  ) {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
-    return this.invoicesService.create({
-      fileName: file.filename,
-      filePath: file.path,
-    });
+    return this.invoicesService.create(
+      {
+        fileName: file.filename,
+        filePath: file.path,
+      },
+      req.user.userId,
+    );
   }
 
   @Get()
-  findAll() {
-    return this.invoicesService.findAll();
+  findAll(@Req() req: RequestWithUser) {
+    return this.invoicesService.findAll(req.user.userId);
   }
 
   @Post(':id/chat')
   async chat(
     @Param('id') id: string,
     @Body('question') question: string,
+    @Req() req: RequestWithUser,
   ): Promise<{ answer: string }> {
-    const invoice = await this.invoicesService.findOne(id);
+    const invoice = await this.invoicesService.findOne(id, req.user.userId);
 
     if (!invoice) {
       throw new BadRequestException('Nota fiscal não encontrada');
@@ -77,7 +96,16 @@ export class InvoicesController {
   }
 
   @Get(':id/messages')
-  async getMessages(@Param('id') id: string): Promise<Message[]> {
+  async getMessages(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+  ): Promise<Message[]> {
+    const invoice = await this.invoicesService.findOne(id, req.user.userId);
+
+    if (!invoice) {
+      throw new BadRequestException('Nota fiscal não encontrada');
+    }
+
     return await this.invoicesService.findMessages(id);
   }
 }
