@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: invoice-backend
+    env: docker
+    region: oregon
+    plan: free
+    rootDir: backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: invoice-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PORT
+        value: 3000
+    autoDeploy: true
+
+  - type: web
+    name: invoice-frontend
+    env: docker
+    region: oregon
+    plan: free
+    rootDir: frontend
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: invoice-backend
+          property: url
+    autoDeploy: true
+
+databases:
+  # 3. Database
+  - name: invoice-db
+    region: oregon
+    plan: free
+    databaseName: sio_db
+    user: user
+
+version: "1"
