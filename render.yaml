@@ -16,6 +16,8 @@ services:
         sync: false
       - key: PORT
         value: 3000
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=384"
     autoDeploy: true
 
   - type: web
@@ -27,10 +29,11 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_URL
         sync: false
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=384"
     autoDeploy: true
 
 databases:
-  # 3. Database
   - name: invoice-db
     region: oregon
     plan: free
