@@ -10,9 +10,10 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-ARG NEXT_PUBLIC_API_URL
+ARG API_URL="https://invoice-backend-66s6.onrender.com"
 
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$API_URL
+# ------------------------------
 
 RUN npm run build
 

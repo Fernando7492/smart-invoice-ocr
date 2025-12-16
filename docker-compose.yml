@@ -34,9 +34,12 @@ services:
       - db
     command: >
       sh -c "sleep 5 && npx prisma migrate deploy && npm run start:dev"
-  
+   
   frontend:
-      build: ./frontend
+      build: 
+        context: ./frontend
+        args:
+          API_URL: "http://localhost:3000"
       container_name: sio_frontend
       ports:
         - "3001:3000"
@@ -47,6 +50,7 @@ services:
         - sio-network
       depends_on:
         - backend
+      command: npm run dev
 
 volumes:
   pgdata:
