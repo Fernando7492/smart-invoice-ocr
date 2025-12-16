@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: sio_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sio_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sio-network
+
+  backend:
+    build: ./backend
+    container_name: sio_backend
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/sio_db?schema=public"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - sio-network
+    depends_on:
+      - db
+    command: >
+      sh -c "sleep 5 && npx prisma migrate deploy && npm run start:dev"
+  
+  frontend:
+      build: ./frontend
+      container_name: sio_frontend
+      ports:
+        - "3001:3000"
+      volumes:
+        - ./frontend:/app
+        - /app/node_modules
+      networks:
+        - sio-network
+      depends_on:
+        - backend
+
+volumes:
+  pgdata:
+
+networks:
+  sio-network:
+    driver: bridge
