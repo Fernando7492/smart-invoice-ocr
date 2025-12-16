@@ -26,10 +26,7 @@ services:
     rootDir: frontend
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: invoice-backend
-          property: url
+        sync: false
     autoDeploy: true
 
 databases:
